@@ -521,28 +521,28 @@ mv /home/steam/.config/EXILED/Plugins/problem_plugin.dll /home/steam/.config/EXI
 
 ## 📚 常见问题解答 / FAQ
 
-### Q1: 脚本支持哪些 Linux 发行版？/ Which Linux distributions does the script support?
-**A**: 目前支持 Ubuntu 22.04+ 和 Debian 12+。其他发行版可能需要手动调整。
-**A**: Currently supports Ubuntu 22.04+ and Debian 12+. Other distributions may require manual adjustments.
+### Q1: 脚本支持哪些 Linux 发行版？/ Which Linux distributions does the script support?  
+**A**: 目前支持 Ubuntu 22.04+ 和 Debian 12+。其他发行版可能需要手动调整。  
+**A**: Currently supports Ubuntu 22.04+ and Debian 12+. Other distributions may require manual adjustments.  
 
-### Q2: 可以在 VPS 上运行吗？/ Can it run on VPS?
-**A**: 可以，但建议至少 2GB RAM 和 2 CPU 核心。脚本会自动检测资源并提供优化建议。
-**A**: Yes, but recommend at least 2GB RAM and 2 CPU cores. The script automatically detects resources and provides optimization suggestions.
+### Q2: 可以在 VPS 上运行吗？/ Can it run on VPS?  
+**A**: 可以，但建议至少 2GB RAM 和 2 CPU 核心。脚本会自动检测资源并提供优化建议。  
+**A**: Yes, but recommend at least 2GB RAM and 2 CPU cores. The script automatically detects resources and provides optimization suggestions.  
 
 ### Q3: 如何备份服务端数据？/ How to backup server data?
 **A**:
 ```bash
-# 备份配置和数据 / Backup configuration and data
+# 备份配置和数据 / Backup configuration and data   
 sudo tar -czf scpsl_backup_$(date +%Y%m%d).tar.gz /home/steam/.config/
 ```
 
 ### Q4: 如何更改服务端端口？/ How to change server port?
-**A**: 编辑配置文件 `/home/steam/.config/SCP Secret Laboratory/config/config.yml` 并重启服务端。
-**A**: Edit configuration file `/home/steam/.config/SCP Secret Laboratory/config/config.yml` and restart server.
+**A**: 重命名 `/home/steam/.config/SCP Secret Laboratory/config` 内需要更改的端口号   
+**A**: Rename the port number that needs to be changed in `/home/steam/.config/SCP Secret Laboratory/config`
 
-### Q5: GitHub 连接失败怎么办？/ What to do if GitHub connection fails?
-**A**: 脚本会自动尝试加速镜像。如果仍然失败，可以手动下载文件后本地安装。
-**A**: The script automatically tries acceleration mirrors. If it still fails, you can manually download files and install locally.
+### Q5: GitHub 连接失败怎么办？/ What to do if GitHub connection fails?  
+**A**: 脚本会自动尝试加速镜像。如果仍然失败，可以手动下载文件后本地安装。  
+**A**: The script automatically tries acceleration mirrors. If it still fails, you can manually download files and install locally.  
 
 ## 🔄 更新与维护 / Updates & Maintenance
 
