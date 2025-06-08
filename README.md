@@ -1,12 +1,12 @@
-# SCP:SL 服务端一键部署脚本 / SCP:SL Server Auto-Deploy Script
+# SCP:SL Linux 服务端一键部署脚本 / SCP:SL Server Linux Auto-Deploy Script
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
 [![Platform](https://img.shields.io/badge/Platform-Ubuntu%2022.04%2B%20%7C%20Debian%2012%2B-orange.svg)](https://github.com/kldhsh123/SCP-SL-AutoDeploy)
 
-一个功能完整的 SCP: Secret Laboratory 服务端自动化部署脚本，支持双语界面、智能系统检测、自动依赖安装、防火墙配置、EXILED 模组管理等功能。
+一个功能完整的 Linux SCP: Secret Laboratory 服务端自动化部署脚本，支持双语界面、智能系统检测、自动依赖安装、防火墙配置、EXILED 模组管理等功能。
 
-A comprehensive SCP: Secret Laboratory server auto-deployment script with bilingual interface, intelligent system detection, automatic dependency installation, firewall configuration, EXILED mod management, and more.
+A comprehensive Linux SCP: Secret Laboratory server auto-deployment script with bilingual interface, intelligent system detection, automatic dependency installation, firewall configuration, EXILED mod management, and more.
 ![18ab0d4d233dc8ff4a53419918102e9e](https://github.com/user-attachments/assets/60d92854-3d7f-4a4c-a724-b185de6c753a)
 
 
