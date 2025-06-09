@@ -3,7 +3,7 @@
 # SCP:SL 服务端一键部署脚本 / SCP:SL Server One-Click Deployment Script
 # 适用于 Ubuntu 22.04+ 和 Debian 12+ / Compatible with Ubuntu 22.04+ and Debian 12+
 # 作者 / Author: 开朗的火山河123 / kldhsh123
-# V1.0 / GPL-3.0 license
+# V1.1 / GPL-3.0 license
 
 set -e  # 遇到错误时退出
 
@@ -977,6 +977,17 @@ create_startup_script() {
 #!/bin/bash
 
 # SCP:SL 服务端启动脚本
+
+# 获取服务端ID
+SERVER_ID="${1:-scpsl}"
+
+# 获取tmux会话名
+if [ "$SERVER_ID" == "scpsl" ]; then
+    SESSION_NAME="scpsl"
+else
+    SESSION_NAME="scpsl_$SERVER_ID"
+fi
+
 cd ~/steamcmd/scpsl
 
 # 检查服务端文件是否存在
@@ -986,18 +997,25 @@ if [ ! -f "./LocalAdmin" ]; then
     exit 1
 fi
 
+# 检查会话是否已存在
+if tmux has-session -t $SESSION_NAME 2>/dev/null; then
+    echo "错误: $SESSION_NAME 会话已存在" "Error: $SESSION_NAME session already exists"
+    echo "请使用 'tmux attach-session -t $SESSION_NAME' 连接到现有会话" "Please use 'tmux attach-session -t $SESSION_NAME' to connect to existing session"
+    exit 1
+fi
+
 # 创建新的tmux会话并启动服务端
-echo "正在启动 SCP:SL 服务端..." "Starting SCP:SL server..."
+echo "正在启动 SCP:SL 服务端 (ID: $SERVER_ID)..." "Starting SCP:SL server (ID: $SERVER_ID)..."
 echo "使用以下命令连接到服务端控制台:" "Using the following command to connect to server console:"
-echo "  sudo -u steam tmux attach-session -t scpsl" "  sudo -u steam tmux attach-session -t scpsl"
+echo "  sudo -u steam tmux attach-session -t $SESSION_NAME" "  sudo -u steam tmux attach-session -t $SESSION_NAME"
 echo ""
 echo "使用以下命令分离tmux会话 (保持服务端运行):" "Using the following command to detach tmux session (keep server running):"
 echo "  Ctrl+B 然后按 D" "  Ctrl+B then press D"
 echo ""
 
-tmux new-session -d -s scpsl './LocalAdmin'
+tmux new-session -d -s $SESSION_NAME './LocalAdmin'
 echo "SCP:SL 服务端已在后台启动" "SCP:SL server started in background"
-echo "tmux 会话名称: scpsl" "tmux session name: scpsl"
+echo "tmux 会话名称: $SESSION_NAME" "tmux session name: $SESSION_NAME"
 EOF
     
     # 设置脚本权限
@@ -1016,36 +1034,102 @@ create_management_scripts() {
 
 # SCP:SL 服务端管理脚本
 
+# 获取服务器ID参数，默认为scpsl
+get_server_id() {
+    local id="${1:-scpsl}"
+    echo "$id"
+}
+
+# 获取tmux会话名
+get_session_name() {
+    local id="$1"
+    if [ "$id" == "scpsl" ]; then
+        echo "scpsl"
+    else
+        echo "scpsl_$id"
+    fi
+}
+
 case "$1" in
     start)
-        echo "启动 SCP:SL 服务端..." "Starting SCP:SL server..."
-        sudo -u steam /home/steam/start_scpsl.sh
+        SERVER_ID=$(get_server_id "$2")
+        SESSION_NAME=$(get_session_name "$SERVER_ID")
+        echo "启动 SCP:SL 服务端 (ID: $SERVER_ID)..." "Starting SCP:SL server (ID: $SERVER_ID)..."
+        
+        # 检查是否已经运行
+        if sudo -u steam tmux has-session -t $SESSION_NAME 2>/dev/null; then
+            echo "服务端 $SERVER_ID 已在运行中" "Server $SERVER_ID is already running"
+            exit 0
+        fi
+        
+        # 启动服务端
+        sudo -u steam bash -c "cd ~/steamcmd/scpsl && tmux new-session -d -s $SESSION_NAME './LocalAdmin'"
+        echo "SCP:SL 服务端 $SERVER_ID 已在后台启动" "SCP:SL server $SERVER_ID started in background"
+        echo "tmux 会话名称: $SESSION_NAME" "tmux session name: $SESSION_NAME"
         ;;
     stop)
-        echo "停止 SCP:SL 服务端..." "Stopping SCP:SL server..."
-        sudo -u steam tmux kill-session -t scpsl 2>/dev/null || echo "服务端未运行" "Server not running"
+        SERVER_ID=$(get_server_id "$2")
+        SESSION_NAME=$(get_session_name "$SERVER_ID")
+        echo "停止 SCP:SL 服务端 (ID: $SERVER_ID)..." "Stopping SCP:SL server (ID: $SERVER_ID)..."
+        sudo -u steam tmux kill-session -t $SESSION_NAME 2>/dev/null || echo "服务端 $SERVER_ID 未运行" "Server $SERVER_ID not running"
         ;;
     restart)
-        echo "重启 SCP:SL 服务端..." "Restarting SCP:SL server..."
-        sudo -u steam tmux kill-session -t scpsl 2>/dev/null || true
+        SERVER_ID=$(get_server_id "$2")
+        SESSION_NAME=$(get_session_name "$SERVER_ID")
+        echo "重启 SCP:SL 服务端 (ID: $SERVER_ID)..." "Restarting SCP:SL server (ID: $SERVER_ID)..."
+        sudo -u steam tmux kill-session -t $SESSION_NAME 2>/dev/null || true
         sleep 2
-        sudo -u steam /home/steam/start_scpsl.sh
+        sudo -u steam bash -c "cd ~/steamcmd/scpsl && tmux new-session -d -s $SESSION_NAME './LocalAdmin'"
+        echo "SCP:SL 服务端 $SERVER_ID 已重启" "SCP:SL server $SERVER_ID restarted"
         ;;
     status)
-        if sudo -u steam tmux has-session -t scpsl 2>/dev/null; then
-            echo "SCP:SL 服务端正在运行" "SCP:SL server is running"
+        if [ -z "$2" ]; then
+            # 列出所有SCP:SL服务端
+            echo "SCP:SL 服务端状态列表：" "SCP:SL servers status list:"
+            sessions=$(sudo -u steam tmux ls 2>/dev/null | grep "^scpsl" || echo "")
+            if [ -z "$sessions" ]; then
+                echo "没有正在运行的SCP:SL服务端实例" "No SCP:SL server instances running"
+            else
+                echo "$sessions"
+                echo ""
+                echo "使用 'scpsl-manager status <id>' 查看特定服务端详情" "Use 'scpsl-manager status <id>' to view specific server details"
+            fi
         else
-            echo "SCP:SL 服务端未运行" "SCP:SL server not running"
+            SERVER_ID=$(get_server_id "$2")
+            SESSION_NAME=$(get_session_name "$SERVER_ID")
+            if sudo -u steam tmux has-session -t $SESSION_NAME 2>/dev/null; then
+                echo "SCP:SL 服务端 $SERVER_ID 正在运行" "SCP:SL server $SERVER_ID is running"
+                echo "会话名称: $SESSION_NAME" "Session name: $SESSION_NAME"
+            else
+                echo "SCP:SL 服务端 $SERVER_ID 未运行" "SCP:SL server $SERVER_ID not running"
+            fi
         fi
         ;;
     console)
-        echo "连接到 SCP:SL 服务端控制台..." "Connecting to SCP:SL server console..."
+        SERVER_ID=$(get_server_id "$2")
+        SESSION_NAME=$(get_session_name "$SERVER_ID")
+        echo "连接到 SCP:SL 服务端控制台 (ID: $SERVER_ID)..." "Connecting to SCP:SL server console (ID: $SERVER_ID)..."
         echo "使用 Ctrl+B 然后按 D 来分离会话" "Using Ctrl+B then D to detach session"
-        sudo -u steam tmux attach-session -t scpsl
+        
+        if ! sudo -u steam tmux has-session -t $SESSION_NAME 2>/dev/null; then
+            echo "错误: 服务端 $SERVER_ID 未运行" "Error: Server $SERVER_ID not running"
+            exit 1
+        fi
+        
+        sudo -u steam tmux attach-session -t $SESSION_NAME
         ;;
     update)
         echo "更新 SCP:SL 服务端..." "Updating SCP:SL server..."
-        sudo -u steam tmux kill-session -t scpsl 2>/dev/null || true
+        # 停止所有服务端实例
+        sessions=$(sudo -u steam tmux ls 2>/dev/null | grep "^scpsl" | cut -d ':' -f1 || echo "")
+        if [ -n "$sessions" ]; then
+            echo "停止所有运行中的服务端实例..." "Stopping all running server instances..."
+            for session in $sessions; do
+                sudo -u steam tmux kill-session -t $session 2>/dev/null || true
+                echo "已停止会话: $session" "Stopped session: $session"
+            done
+        fi
+        
         sudo -u steam bash -c "cd ~ && steamcmd +force_install_dir /home/steam/steamcmd/scpsl +login anonymous +app_update 996560 validate +quit"
         echo "更新完成" "Update completed"
         ;;
@@ -1293,7 +1377,7 @@ EXILED_EOF
         echo "SCP:SL 服务端管理工具 / SCP:SL Server Management Tool" "SCP:SL Server Management Tool"
         echo "作者 / Author: 开朗的火山河123 / kldhsh123" "Author: kldhsh123"
         echo ""
-        echo "用法 / Usage: $0 {start|stop|restart|status|console|update|swap|setup-swap|firewall|exiled}" "Usage: $0 {start|stop|restart|status|console|update|swap|setup-swap|firewall|exiled}"
+        echo "用法 / Usage: $0 {start|stop|restart|status|console|update|swap|setup-swap|firewall|exiled} [server_id]" "Usage: $0 {start|stop|restart|status|console|update|swap|setup-swap|firewall|exiled} [server_id]"
         echo ""
         echo "命令说明 / Command Description:" "Command Description:"
         echo "  start      - 启动服务端 / Start server" "  start      - Start server"
@@ -1306,6 +1390,10 @@ EXILED_EOF
         echo "  setup-swap - 设置虚拟内存 / Setup swap" "  setup-swap - Setup swap"
         echo "  firewall   - 查看防火墙状态 / Check firewall status" "  firewall   - Check firewall status"
         echo "  exiled     - EXILED 管理 / EXILED management" "  exiled     - EXILED management"
+        echo ""
+        echo "选项说明 / Options:" "Options:"
+        echo "  server_id  - 可选参数，指定服务端ID (默认: scpsl)" "  server_id  - Optional parameter, specify server ID (default: scpsl)"
+        echo "               多服务端时使用不同ID来区分" "               Use different IDs to distinguish multiple servers"
         exit 1
         ;;
 esac
@@ -1328,16 +1416,21 @@ show_completion_info() {
         show_author_info
         echo ""
         echo "使用以下命令管理服务端:" "Use the following commands to manage the server:"
-        echo "  scpsl-manager start      # 启动服务端" "  scpsl-manager start      # Start server"
-        echo "  scpsl-manager stop       # 停止服务端" "  scpsl-manager stop       # Stop server"
-        echo "  scpsl-manager restart    # 重启服务端" "  scpsl-manager restart    # Restart server"
-        echo "  scpsl-manager status     # 查看状态" "  scpsl-manager status     # Check status"
-        echo "  scpsl-manager console    # 连接控制台" "  scpsl-manager console    # Connect to console"
-        echo "  scpsl-manager update     # 更新服务端" "  scpsl-manager update     # Update server"
-        echo "  scpsl-manager swap       # 查看虚拟内存状态" "  scpsl-manager swap       # Check swap status"
-        echo "  scpsl-manager setup-swap # 设置虚拟内存" "  scpsl-manager setup-swap # Setup swap"
-        echo "  scpsl-manager firewall   # 查看防火墙状态" "  scpsl-manager firewall   # Check firewall status"
-        echo "  scpsl-manager exiled     # EXILED 管理" "  scpsl-manager exiled     # EXILED management"
+        echo "  scpsl-manager start [id]     # 启动服务端 (可选ID)" "  scpsl-manager start [id]     # Start server (optional ID)"
+        echo "  scpsl-manager stop [id]      # 停止服务端 (可选ID)" "  scpsl-manager stop [id]      # Stop server (optional ID)"
+        echo "  scpsl-manager restart [id]   # 重启服务端 (可选ID)" "  scpsl-manager restart [id]   # Restart server (optional ID)"
+        echo "  scpsl-manager status [id]    # 查看状态 (无ID则列出所有实例)" "  scpsl-manager status [id]    # Check status (list all instances if no ID)"
+        echo "  scpsl-manager console [id]   # 连接控制台 (可选ID)" "  scpsl-manager console [id]   # Connect to console (optional ID)"
+        echo "  scpsl-manager update         # 更新服务端" "  scpsl-manager update         # Update server"
+        echo "  scpsl-manager swap           # 查看虚拟内存状态" "  scpsl-manager swap           # Check swap status"
+        echo "  scpsl-manager setup-swap     # 设置虚拟内存" "  scpsl-manager setup-swap     # Setup swap"
+        echo "  scpsl-manager firewall       # 查看防火墙状态" "  scpsl-manager firewall       # Check firewall status"
+        echo "  scpsl-manager exiled         # EXILED 管理" "  scpsl-manager exiled         # EXILED management"
+        echo ""
+        echo "多实例管理示例 (使用不同ID):" "Multi-instance management examples (using different IDs):"
+        echo "  scpsl-manager start server1    # 启动ID为server1的服务端" "  scpsl-manager start server1    # Start server with ID server1"
+        echo "  scpsl-manager start server2    # 启动ID为server2的服务端" "  scpsl-manager start server2    # Start server with ID server2"
+        echo "  scpsl-manager status           # 列出所有运行中的服务端" "  scpsl-manager status           # List all running servers"
         echo ""
         echo "服务端文件位置: /home/steam/steamcmd/scpsl" "Server files location: /home/steam/steamcmd/scpsl"
         echo "配置文件位置: /home/steam/.config/SCP Secret Laboratory" "Config files location: /home/steam/.config/SCP Secret Laboratory"
@@ -1357,16 +1450,21 @@ show_completion_info() {
         show_author_info
         echo ""
         echo "Use the following commands to manage the server:" "Use the following commands to manage the server:"
-        echo "  scpsl-manager start      # Start server" "  scpsl-manager start      # Start server"
-        echo "  scpsl-manager stop       # Stop server" "  scpsl-manager stop       # Stop server"
-        echo "  scpsl-manager restart    # Restart server" "  scpsl-manager restart    # Restart server"
-        echo "  scpsl-manager status     # Check status" "  scpsl-manager status     # Check status"
-        echo "  scpsl-manager console    # Connect to console" "  scpsl-manager console    # Connect to console"
-        echo "  scpsl-manager update     # Update server" "  scpsl-manager update     # Update server"
-        echo "  scpsl-manager swap       # Check swap status" "  scpsl-manager swap       # Check swap status"
-        echo "  scpsl-manager setup-swap # Setup swap" "  scpsl-manager setup-swap # Setup swap"
-        echo "  scpsl-manager firewall   # Check firewall status" "  scpsl-manager firewall   # Check firewall status"
-        echo "  scpsl-manager exiled     # EXILED management" "  scpsl-manager exiled     # EXILED management"
+        echo "  scpsl-manager start [id]     # Start server (optional ID)" "  scpsl-manager start [id]     # Start server (optional ID)"
+        echo "  scpsl-manager stop [id]      # Stop server (optional ID)" "  scpsl-manager stop [id]      # Stop server (optional ID)"
+        echo "  scpsl-manager restart [id]   # Restart server (optional ID)" "  scpsl-manager restart [id]   # Restart server (optional ID)"
+        echo "  scpsl-manager status [id]    # Check status (list all instances if no ID)" "  scpsl-manager status [id]    # Check status (list all instances if no ID)"
+        echo "  scpsl-manager console [id]   # Connect to console (optional ID)" "  scpsl-manager console [id]   # Connect to console (optional ID)"
+        echo "  scpsl-manager update         # Update server" "  scpsl-manager update         # Update server"
+        echo "  scpsl-manager swap           # Check swap status" "  scpsl-manager swap           # Check swap status"
+        echo "  scpsl-manager setup-swap     # Setup swap" "  scpsl-manager setup-swap     # Setup swap"
+        echo "  scpsl-manager firewall       # Check firewall status" "  scpsl-manager firewall       # Check firewall status"
+        echo "  scpsl-manager exiled         # EXILED management" "  scpsl-manager exiled         # EXILED management"
+        echo ""
+        echo "Multi-instance management examples (using different IDs):" "Multi-instance management examples (using different IDs):"
+        echo "  scpsl-manager start server1    # Start server with ID server1" "  scpsl-manager start server1    # Start server with ID server1"
+        echo "  scpsl-manager start server2    # Start server with ID server2" "  scpsl-manager start server2    # Start server with ID server2"
+        echo "  scpsl-manager status           # List all running servers" "  scpsl-manager status           # List all running servers"
         echo ""
         echo "Server files location: /home/steam/steamcmd/scpsl" "Server files location: /home/steam/steamcmd/scpsl"
         echo "Config files location: /home/steam/.config/SCP Secret Laboratory" "Config files location: /home/steam/.config/SCP Secret Laboratory"
