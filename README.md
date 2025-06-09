@@ -117,12 +117,12 @@ sudo ./scpsl-server-install.sh
 
 ### 基本操作 / Basic Operations
 ```bash
-scpsl-manager start      # 启动服务端 / Start server
-scpsl-manager stop       # 停止服务端 / Stop server
-scpsl-manager restart    # 重启服务端 / Restart server
-scpsl-manager status     # 查看状态 / Check status
-scpsl-manager console    # 连接控制台 / Connect to console
-scpsl-manager update     # 更新服务端 / Update server
+scpsl-manager start [id]     # 启动服务端 (可选ID) / Start server (optional ID)
+scpsl-manager stop [id]      # 停止服务端 (可选ID) / Stop server (optional ID)
+scpsl-manager restart [id]   # 重启服务端 (可选ID) / Restart server (optional ID)
+scpsl-manager status [id]    # 查看状态 (无ID则列出所有实例) / Check status (list all instances if no ID)
+scpsl-manager console [id]   # 连接控制台 (可选ID) / Connect to console (optional ID)
+scpsl-manager update         # 更新服务端 / Update server
 ```
 
 ### 高级功能 / Advanced Features
@@ -133,6 +133,27 @@ scpsl-manager firewall       # 查看防火墙状态 / Check firewall status
 scpsl-manager exiled install # 安装 EXILED / Install EXILED
 scpsl-manager exiled status  # 查看 EXILED 状态 / Check EXILED status
 ```
+
+### 多实例管理 / Multi-Instance Management
+
+脚本支持运行多个 SCP:SL 服务端实例，每个实例使用独立的 tmux 会话 / The script supports running multiple SCP:SL server instances, each with its own tmux session:
+
+```bash
+# 启动多个服务端实例 / Start multiple server instances
+scpsl-manager start server1    # 启动ID为server1的服务端 / Start server with ID server1
+scpsl-manager start server2    # 启动ID为server2的服务端 / Start server with ID server2
+
+# 查看所有运行中的实例 / View all running instances
+scpsl-manager status           # 列出所有服务端实例 / List all server instances
+
+# 管理特定实例 / Manage specific instance
+scpsl-manager console server1  # 连接到server1的控制台 / Connect to server1 console
+scpsl-manager stop server2     # 停止server2实例 / Stop server2 instance
+```
+
+会话命名规则 / Session naming rules:
+- 默认实例: `scpsl` / Default instance: `scpsl`
+- 自定义ID实例: `scpsl_[id]` / Custom ID instance: `scpsl_[id]`
 
 ## 🎯 EXILED 模组框架 / EXILED Mod Framework
 
@@ -212,11 +233,19 @@ sudo ./scpsl-server-install.sh
 # 检查服务端状态 / Check server status
 scpsl-manager status
 
+# 查看特定服务端实例状态 / Check specific server instance status
+scpsl-manager status [id]
+
 # 查看服务端日志 / View server logs
-scpsl-manager console
+scpsl-manager console [id]
 ```
 
 ## 📝 更新日志 / Changelog
+
+### v1.1.0
+- 添加多服务端实例支持 / Added multi-server instance support
+- 优化服务端状态管理 / Optimized server status management
+- 改进 tmux 会话管理 / Improved tmux session management
 
 ### v1.0.0
 - 初始版本发布 / Initial release
@@ -356,7 +385,11 @@ ls -la /home/steam/
 #### 实时查看日志 / Real-time Log Viewing
 ```bash
 # 连接到服务端控制台 / Connect to server console
-scpsl-manager console
+scpsl-manager console              # 连接到默认实例 / Connect to default instance
+scpsl-manager console [server_id]  # 连接到指定ID实例 / Connect to specific ID instance
+
+# 列出所有运行中的实例 / List all running instances
+scpsl-manager status
 
 # 分离会话快捷键 / Detach session shortcut
 # Ctrl+B, 然后按 D / then press D
@@ -425,6 +458,21 @@ sudo -u steam nano /home/steam/start_scpsl.sh
 
 # 示例优化参数 / Example optimization parameters
 ./LocalAdmin -batchmode -nographics -silent-crashes
+```
+
+#### 多实例资源分配 / Multi-Instance Resource Allocation
+运行多个服务端实例时，合理分配资源 / When running multiple server instances, allocate resources reasonably:
+
+```bash
+# 检查所有运行中的服务端实例 / Check all running server instances
+scpsl-manager status
+
+# 监控多实例资源使用 / Monitor multi-instance resource usage
+htop -u steam
+
+# 建议的硬件配置 / Recommended hardware configuration:
+# - 每个实例至少1.5GB内存 / At least 1.5GB memory per instance
+# - 每个实例至少1个CPU核心 / At least 1 CPU core per instance
 ```
 
 ## 🔧 故障排除详解 / Detailed Troubleshooting
