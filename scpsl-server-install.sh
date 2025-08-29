@@ -116,42 +116,6 @@ check_root() {
     fi
 }
 
-# 检查系统版本
-check_system() {
-    log_info "正在检查系统版本..." "Checking system version..."
-    
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        OS=$NAME
-        VER=$VERSION_ID
-    else
-        log_error "无法检测系统版本" "Cannot detect system version"
-        exit 1
-    fi
-    
-    # 检查Ubuntu版本
-    if [[ $OS == "Ubuntu" ]]; then
-        if (( $(echo "$VER >= 22.04" | bc -l) )); then
-            log_success "系统版本检查通过: $OS $VER" "System version check passed: $OS $VER"
-        else
-            log_error "需要 Ubuntu 22.04 或更高版本，当前版本: $VER" "Ubuntu 22.04 or higher is required, current version: $VER"
-            exit 1
-        fi
-    # 检查Debian版本
-    elif [[ $OS == "Debian GNU/Linux" ]]; then
-        if (( $(echo "$VER >= 12" | bc -l) )); then
-            log_success "系统版本检查通过: $OS $VER" "System version check passed: $OS $VER"
-        else
-            log_error "需要 Debian 12 或更高版本，当前版本: $VER" "Debian 12 or higher is required, current version: $VER"
-            exit 1
-        fi
-    else
-        log_error "不支持的操作系统: $OS" "Unsupported operating system: $OS"
-        log_error "仅支持 Ubuntu 22.04+ 和 Debian 12+" "Only Ubuntu 22.04+ and Debian 12+ are supported"
-        exit 1
-    fi
-}
-
 # 检查系统架构
 check_architecture() {
     log_info "正在检查系统架构..." "Checking system architecture..."
