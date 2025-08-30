@@ -3,7 +3,7 @@
 # SCP:SL 服务端一键部署脚本 / SCP:SL Server One-Click Deployment Script
 # 适用于 Ubuntu 22.04+ 和 Debian 12+ / Compatible with Ubuntu 22.04+ and Debian 12+
 # 作者 / Author: 开朗的火山河123 / kldhsh123
-# V1.1 / GPL-3.0 license
+# V1.2 / GPL-3.0 license
 
 set -e  # 遇到错误时退出
 
