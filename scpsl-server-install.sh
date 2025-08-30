@@ -463,11 +463,11 @@ install_prerequisites() {
     # 更新软件包列表 / Update package list
     apt update -y
 
-    # 添加multiverse仓库 / Add multiverse repository
-    add-apt-repository multiverse -y
-
     # 安装基础软件包 / Install basic packages
     apt install -y software-properties-common bc
+
+    # 添加multiverse仓库 / Add multiverse repository
+    add-apt-repository multiverse -y
 
     # 添加i386架构支持 / Add i386 architecture support
     dpkg --add-architecture i386
